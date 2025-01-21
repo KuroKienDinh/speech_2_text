@@ -1,0 +1,5 @@
+audio_model: "facebook/seamless-m4t-v2-large"
+ffmpeg_path: "C:/ffmpeg/bin/ffmpeg.exe"
+threshold: 0.65
+sample_rate: 16000
+

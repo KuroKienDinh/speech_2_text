@@ -1,0 +1,13 @@
+version: '3.12'
+
+services:
+  fastapi_app:
+    build:
+      context: .
+      dockerfile: ./api/Dockerfile
+    container_name: fastapi_app
+    ports:
+      - "8008:8008"
+    # If you want to pass environment variables, add them here
+    environment:
+      - ENV=production
