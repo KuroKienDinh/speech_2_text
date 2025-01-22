@@ -12,7 +12,7 @@ import face_recognition
 import torchaudio
 
 from config import Config
-from utils import find_three_spoken_digits
+from api.utils import find_three_spoken_digits
 
 
 # ------------------------------------------------
