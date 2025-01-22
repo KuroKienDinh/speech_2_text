@@ -1,9 +1,15 @@
 # syntax=docker/dockerfile:1
 FROM python:3.12-slim
 
-# Install ffmpeg and libsndfile1 (since your code references them)
+# Install system dependencies
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends ffmpeg libsndfile1 && \
+    apt-get install -y --no-install-recommends \
+        ffmpeg \
+        libsndfile1 \
+        build-essential \
+        cmake \
+        libgtk-3-dev \
+        libboost-all-dev && \
     rm -rf /var/lib/apt/lists/*
 
 # Create and switch to a working directory
