@@ -1,5 +1,5 @@
 # docker compose -f docker-compose.yml -p media_process up -d --build
-# docker-compose -f docker-compose.yml -p media_process down -v
+# docker compose -f docker-compose.yml -p media_process down -v
 
 version: '3.12.8'
 
