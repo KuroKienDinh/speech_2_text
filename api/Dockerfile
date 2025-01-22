@@ -10,7 +10,9 @@ RUN apt-get update && \
         cmake \
         libgtk-3-dev \
         libboost-all-dev && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* \
+
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
 # Create and switch to a working directory
 WORKDIR /app
