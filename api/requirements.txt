@@ -12,7 +12,7 @@ torchvision
 torchaudio
 PyYAML==6.0.1
 protobuf==5.29.3
-tiktoken==0.8.0
+tiktoken==0.3.3
 blobfile
 transformers==4.48.1
-tokenizers==0.20.1
+tokenizers==0.21.0
