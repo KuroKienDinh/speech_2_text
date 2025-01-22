@@ -12,7 +12,8 @@ RUN apt-get update && \
         libboost-all-dev && \
     rm -rf /var/lib/apt/lists/* \
 
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
+# Add .cargo/bin to PATH
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Create and switch to a working directory
