@@ -11,23 +11,21 @@ RUN apt-get update && \
         libgtk-3-dev \
         cargo \
         libboost-all-dev && \
-    rm -rf /var/lib/apt/lists/* \
-
+    rm -rf /var/lib/apt/lists/*
 
 # Create and switch to a working directory
 WORKDIR /app
-
+ENV PYTHONPATH=/app
 # Copy requirements.txt from the build context into the container
-# The path "api/requirements.txt" works because our build context is the project root
-# and the file is located in the api/ subfolder
 COPY ./api/requirements.txt .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the entire `api` folder into the container
+# Copy the entire context into /app
 COPY . /app
-
+# Debug: List files to confirm structure
+RUN find /app -type f
 # Expose the port
 EXPOSE 8008
 
