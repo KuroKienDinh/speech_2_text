@@ -1,5 +1,5 @@
 --index-url https://download.pytorch.org/whl/cpu
-aiofiles==24.1.0
+aiofiles
 uvicorn==0.23.2
 fastapi==0.108.0
 pydantic==2.10.3
