@@ -11,8 +11,8 @@ import cv2
 import face_recognition
 import torchaudio
 
-from config import Config
-from utils import find_three_spoken_digits
+from api.config import Config
+from api.utils import find_three_spoken_digits
 
 
 # ------------------------------------------------
