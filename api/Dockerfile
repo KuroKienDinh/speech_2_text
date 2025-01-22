@@ -32,4 +32,4 @@ COPY api /app/api
 EXPOSE 8008
 
 # Run the FastAPI application via python -m
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8008"]
+CMD ["uvicorn", "api.app:app", "--host", "0.0.0.0", "--port", "8008"]
