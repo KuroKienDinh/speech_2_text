@@ -9,12 +9,10 @@ RUN apt-get update && \
         build-essential \
         cmake \
         libgtk-3-dev \
+        cargo \
         libboost-all-dev && \
     rm -rf /var/lib/apt/lists/* \
 
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
-# Add .cargo/bin to PATH
-ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Create and switch to a working directory
 WORKDIR /app
