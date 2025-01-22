@@ -24,7 +24,7 @@ COPY api/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the entire `api` folder into the container
-COPY api /app
+COPY api /app/api
 
 # Expose the port
 EXPOSE 8008
