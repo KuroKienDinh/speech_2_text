@@ -11,8 +11,8 @@ from typing import Optional
 
 import aiofiles
 import uvicorn
-from api.config import Config
-from api.model import MediaProcessor
+from config import Config
+from model import MediaProcessor
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from pydantic import BaseModel
 from transformers import AutoProcessor, SeamlessM4Tv2Model

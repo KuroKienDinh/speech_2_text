@@ -20,7 +20,7 @@ WORKDIR /app
 # Copy requirements.txt from the build context into the container
 # The path "api/requirements.txt" works because our build context is the project root
 # and the file is located in the api/ subfolder
-COPY api/requirements.txt .
+COPY ./api/requirements.txt .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
