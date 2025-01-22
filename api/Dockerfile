@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM python:3.12.8
+FROM python:3.9.8
 
 # Install system dependencies
 RUN apt-get update && \
