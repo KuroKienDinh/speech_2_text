@@ -4,8 +4,6 @@
 # @Author:      Kuro
 # @Time:        1/18/2025 11:05 AM
 
-from typing import Optional
-
 # ------------------------------------------------
 # Utility: Map of spoken words to digits
 # ------------------------------------------------
@@ -26,7 +24,7 @@ WORD_TO_DIGIT = {
 # ------------------------------------------------
 # Utility: Find exactly 3 consecutive spoken digits
 # ------------------------------------------------
-def find_three_spoken_digits(text: str) -> Optional[str]:
+def find_three_spoken_digits(text: str):
     """
     Finds exactly 3 consecutive spoken digits in the text and returns them
     as a string (e.g., "four seven one" => "471"). Returns None if not found.

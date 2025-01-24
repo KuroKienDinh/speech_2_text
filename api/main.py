@@ -7,15 +7,14 @@
 import os
 import uuid
 import warnings
-from typing import Optional
 
 import aiofiles
 import uvicorn
+from fastapi import FastAPI, File, UploadFile, HTTPException
+from transformers import AutoProcessor, SeamlessM4Tv2Model
+
 from api.config import Config
 from api.model import MediaProcessor
-from fastapi import FastAPI, File, UploadFile, HTTPException
-from pydantic import BaseModel
-from transformers import AutoProcessor, SeamlessM4Tv2Model
 
 warnings.filterwarnings("ignore")
 
@@ -30,15 +29,8 @@ async def startup_event():
     """
     media_model["processor"] = AutoProcessor.from_pretrained(Config.audio_model)
     media_model["model"] = SeamlessM4Tv2Model.from_pretrained(Config.audio_model)
-    print(">>> Model & Processor loaded at startup.")
 
-
-class ProcessResult(BaseModel):
-    three_digit: Optional[str]
-    similarity: bool
-
-
-@app.post("/process", response_model=ProcessResult)
+@app.post("/process")
 async def process_video(video_file: UploadFile = File(...), reference_image: UploadFile = File(...), ffmpeg_path: str = Config.ffmpeg_path, threshold: float = Config.threshold, sample_rate: int = Config.sample_rate):
     # Save video temporarily
     video_ext = os.path.splitext(video_file.filename)[1]
@@ -74,7 +66,7 @@ async def process_video(video_file: UploadFile = File(...), reference_image: Upl
                                    threshold=threshold, sample_rate=sample_rate, ffmpeg_path=ffmpeg_path)
 
         results = processor.run()
-        return ProcessResult(three_digit=results["3-digit"], similarity=results["similarity"])
+        return results
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
