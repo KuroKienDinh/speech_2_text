@@ -7,7 +7,7 @@ import yaml
 
 
 class Config:
-    with open("config.yml", "r") as ymlfile:
+    with open("./api/config.yml", "r") as ymlfile:
         cfg = yaml.load(ymlfile, yaml.SafeLoader)
         audio_model = cfg['audio_model']
         ffmpeg_path = cfg['ffmpeg_path']
