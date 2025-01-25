@@ -66,6 +66,7 @@ async def process_video(video_file: UploadFile = File(...), reference_image: Upl
                                    threshold=threshold, sample_rate=sample_rate, ffmpeg_path=ffmpeg_path)
 
         results = processor.run()
+        print(results)
         return results
 
     except Exception as e:
