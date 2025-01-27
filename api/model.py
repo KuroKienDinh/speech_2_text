@@ -149,7 +149,7 @@ class MediaProcessor:
                 except ValueError as e:
                     if "Spoof detected" in str(e):
                         spoofing_count += 1
-                    if spoofing_count > 4:
+                    if spoofing_count > 6:
                         video_capture.release()
                         cv2.destroyAllWindows()
                         return False, "Spoof detected"
