@@ -1,7 +1,7 @@
 audio_model: "facebook/seamless-m4t-v2-large"
 #ffmpeg_path: "C:/ffmpeg/bin/ffmpeg.exe"
 ffmpeg_path: "ffmpeg"
-threshold: 0.7
+threshold: 0.5
 sample_rate: 16000
 
 face_model_name: "Facenet512"
