@@ -1,7 +1,7 @@
 # docker compose -f docker-compose-gpu.yml -p media_process up -d --build
 # docker compose -f docker-compose-gpu.yml -p media_process down -v
 
-version: '3.12.8'
+version: '3.13.8'
 
 services:
   fastapi_app:
