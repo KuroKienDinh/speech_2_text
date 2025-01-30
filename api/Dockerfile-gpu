@@ -74,7 +74,7 @@ ENV PYTHONPATH=/app
 COPY ./api/requirements-gpu.txt .
 
 # Install Python dependencies
-RUN pip install --no-cache-dir --break-system-packages -r requirements-gpu.txt
+RUN pip install --force-reinstall --no-cache-dir --break-system-packages -r requirements-gpu.txt
 
 # Copy the entire context into /app
 COPY . /app
