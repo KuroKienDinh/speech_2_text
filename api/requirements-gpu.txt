@@ -17,4 +17,3 @@ transformers==4.48.1
 deepface==0.0.93
 tf-keras==2.16.0
 blinker==1.7.0
-tensorflow-gpu==2.10.0
