@@ -73,7 +73,7 @@ RUN python3 -m pip install --upgrade pip
 WORKDIR /app
 ENV PYTHONPATH=/app
 # Copy requirements.txt from the build context into the container
-COPY ./api/requirements.txt .
+COPY ./api/requirements-gpu.txt .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
