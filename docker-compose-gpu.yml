@@ -1,0 +1,17 @@
+# docker compose -f docker-compose.yml -p media_process up -d --build
+# docker compose -f docker-compose.yml -p media_process down -v
+
+version: '3.12.8'
+
+services:
+  fastapi_app:
+    build:
+      context: .
+      dockerfile: ./api/Dockerfile-gpu
+    container_name: fastapi_app
+    ports:
+      - "8008:8008"
+#    restart: on-failure
+    # If you want to pass environment variables, add them here
+    environment:
+      - ENV=production

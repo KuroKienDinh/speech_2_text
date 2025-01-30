@@ -1,0 +1,19 @@
+--index-url https://pypi.org/simple
+--extra-index-url https://download.pytorch.org/whl/cu124
+aiofiles==24.1.0
+uvicorn==0.23.2
+fastapi==0.108.0
+pydantic==2.10.3
+opencv-python==4.11.0.86
+python-multipart==0.0.20
+torch
+torchvision
+torchaudio
+PyYAML==6.0.1
+protobuf==5.29.3
+tiktoken==0.8.0
+sentencepiece==0.2.0
+transformers==4.48.1
+deepface==0.0.93
+tf-keras==2.18.0
+tensorflow[and-cuda]
