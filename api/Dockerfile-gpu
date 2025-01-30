@@ -84,5 +84,5 @@ RUN find /app -type f
 EXPOSE 8008
 
 # Run the FastAPI application via python -m
-CMD [ "python", "-m", "api.main" ]
+CMD [ "python3", "-m", "api.main" ]
 
