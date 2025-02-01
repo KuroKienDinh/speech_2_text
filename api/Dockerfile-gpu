@@ -48,7 +48,7 @@
 #ENV NVIDIA_PRODUCT_NAME="CUDA"
 #ENTRYPOINT ["/opt/nvidia/nvidia_entrypoint.sh"]
 
-FROM nvidia/cuda:12.5.1-runtime-ubuntu24.04
+FROM nvidia/cuda:12.1.1-runtime-ubuntu24.04
 
 RUN apt-get update && \
     apt-get install -y software-properties-common && \
