@@ -8,6 +8,7 @@ services:
     build:
       context: .
       dockerfile: ./api/Dockerfile-gpu
+      platform: linux/amd64
     container_name: fastapi_app
     ports:
       - "8008:8008"
