@@ -51,7 +51,7 @@
 FROM pytorch/pytorch:2.5.1-cuda12.1-cudnn9-runtime
 #FROM tensorflow/tensorflow:latest-gpu
 
-ENV TZ=America/New_York
+ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && \
     apt-get install -y software-properties-common && \
