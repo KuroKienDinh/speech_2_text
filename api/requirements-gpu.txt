@@ -17,4 +17,4 @@ transformers==4.37.1
 deepface==0.0.93
 blinker==1.7.0
 wheel==0.42.0
-tensorflow[and-cuda]==2.18.0
+tensorflow[and-cuda]==2.14.0
