@@ -81,3 +81,5 @@ async def process_video(video_file: UploadFile = File(...), reference_image: Upl
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8008)
+
+    # curl -X POST http://127.0.0.1:8008/process -F "video_file=@2.webm" -F "reference_image=@2.jpg"
