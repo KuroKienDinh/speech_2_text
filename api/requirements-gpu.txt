@@ -13,7 +13,7 @@ PyYAML==6.0.1
 protobuf==4.25.6
 tiktoken==0.8.0
 sentencepiece==0.2.0
-transformers==4.37.2
+transformers==4.37.1
 deepface==0.0.93
 tf-keras==2.17.0
 blinker==1.7.0
