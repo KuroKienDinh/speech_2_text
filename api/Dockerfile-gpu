@@ -43,10 +43,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN apt-mark hold ${NV_LIBCUBLAS_PACKAGE_NAME}
 
 # Add entrypoint items
-COPY entrypoint.d/ /opt/nvidia/entrypoint.d/
-COPY nvidia_entrypoint.sh /opt/nvidia/
-ENV NVIDIA_PRODUCT_NAME="CUDA"
-ENTRYPOINT ["/opt/nvidia/nvidia_entrypoint.sh"]
+#COPY entrypoint.d/ /opt/nvidia/entrypoint.d/
+#COPY nvidia_entrypoint.sh /opt/nvidia/
+#ENV NVIDIA_PRODUCT_NAME="CUDA"
+#ENTRYPOINT ["/opt/nvidia/nvidia_entrypoint.sh"]
 
 RUN apt-get update && \
     apt-get install -y software-properties-common && \
