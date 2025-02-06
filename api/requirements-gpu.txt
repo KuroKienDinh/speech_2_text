@@ -11,7 +11,7 @@ torchvision
 torchaudio
 PyYAML==6.0.1
 protobuf==4.25.6
-tiktoken==0.8.0
+tiktoken==0.7.0
 sentencepiece==0.2.0
 transformers==4.37.1
 deepface==0.0.93
