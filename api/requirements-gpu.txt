@@ -18,5 +18,4 @@ deepface==0.0.93
 blinker==1.7.0
 wheel==0.42.0
 nvidia-cudnn-cu11==8.6.0.163
-tf-keras==2.16.0
 tensorflow[and-cuda]==2.16.0rc0
