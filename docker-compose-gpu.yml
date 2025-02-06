@@ -18,3 +18,10 @@ services:
     # If you want to pass environment variables, add them here
     environment:
       - ENV=production
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [ gpu ]
