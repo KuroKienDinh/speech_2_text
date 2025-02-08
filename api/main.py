@@ -11,6 +11,7 @@ import warnings
 import aiofiles
 import uvicorn
 from fastapi import FastAPI, File, UploadFile, HTTPException
+from starlette.concurrency import run_in_threadpool
 from transformers import AutoProcessor, SeamlessM4Tv2Model
 
 from api.config import Config
@@ -65,8 +66,8 @@ async def process_video(video_file: UploadFile = File(...), reference_image: Upl
         processor = MediaProcessor(media_processor=media_model["processor"], model=media_model["model"], video_path=temp_video_path, reference_image_path=temp_img_path, output_audio_path=temp_audio_path,
                                    threshold=threshold, sample_rate=sample_rate, ffmpeg_path=ffmpeg_path)
 
-        results = processor.run()
-        print(results)
+        # Run the blocking processor.run() in a threadpool
+        results = await run_in_threadpool(processor.run)
         return results
 
     except Exception as e:
