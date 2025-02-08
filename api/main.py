@@ -5,6 +5,7 @@
 # @Time:        1/18/2025 11:04 AM
 
 import os
+import time
 import uuid
 import warnings
 
@@ -33,6 +34,7 @@ async def startup_event():
 
 @app.post("/process")
 async def process_video(video_file: UploadFile = File(...), reference_image: UploadFile = File(...), ffmpeg_path: str = Config.ffmpeg_path, threshold: float = Config.threshold, sample_rate: int = Config.sample_rate):
+    start_time = time.time()
     # Save video temporarily
     video_ext = os.path.splitext(video_file.filename)[1]
     temp_video_path = f"temp_video_{uuid.uuid4()}{video_ext}"
@@ -68,6 +70,8 @@ async def process_video(video_file: UploadFile = File(...), reference_image: Upl
 
         # Run the blocking processor.run() in a threadpool
         results = await run_in_threadpool(processor.run)
+        end_time = time.time()
+        results["elapsed_time"] = end_time - start_time
         return results
 
     except Exception as e:
