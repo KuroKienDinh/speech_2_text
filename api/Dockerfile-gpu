@@ -34,5 +34,5 @@ RUN find /app -type f
 EXPOSE 8008
 
 # Run the FastAPI application via python -m
-CMD [ "python3", "-m", "api.main", "--workers", "2"]
+CMD [ "uvicorn",  "api.main", "--host", "0.0.0.0", "--port", "8008", "--workers", "2"]
 
