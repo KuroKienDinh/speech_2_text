@@ -5,7 +5,7 @@
 # @Time:        1/18/2025 11:10 AM
 
 import subprocess
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 
 import cv2
 import torch
@@ -15,7 +15,7 @@ from deepface import DeepFace
 from api.config import Config
 from api.utils import find_three_spoken_digits
 
-executor = ProcessPoolExecutor(max_workers=2)
+executor = ThreadPoolExecutor(max_workers=2)
 
 
 def extract_audio(ffmpeg_path, video_path, output_audio_path, sample_rate):
