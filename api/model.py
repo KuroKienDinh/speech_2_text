@@ -15,7 +15,7 @@ from deepface import DeepFace
 from api.config import Config
 from api.utils import find_three_spoken_digits
 
-executor = ProcessPoolExecutor(max_workers=4)
+executor = ProcessPoolExecutor(max_workers=2)
 
 
 def extract_audio(ffmpeg_path, video_path, output_audio_path, sample_rate):
