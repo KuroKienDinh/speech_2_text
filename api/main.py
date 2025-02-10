@@ -10,7 +10,6 @@ import uuid
 import warnings
 
 import aiofiles
-import uvicorn
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from starlette.concurrency import run_in_threadpool
 from transformers import AutoProcessor, SeamlessM4Tv2Model
@@ -31,6 +30,7 @@ async def startup_event():
     """
     media_model["processor"] = AutoProcessor.from_pretrained(Config.audio_model)
     media_model["model"] = SeamlessM4Tv2Model.from_pretrained(Config.audio_model)
+
 
 @app.post("/process")
 async def process_video(video_file: UploadFile = File(...), reference_image: UploadFile = File(...), ffmpeg_path: str = Config.ffmpeg_path, threshold: float = Config.threshold, sample_rate: int = Config.sample_rate):
@@ -68,7 +68,6 @@ async def process_video(video_file: UploadFile = File(...), reference_image: Upl
         processor = MediaProcessor(media_processor=media_model["processor"], model=media_model["model"], video_path=temp_video_path, reference_image_path=temp_img_path, output_audio_path=temp_audio_path,
                                    threshold=threshold, sample_rate=sample_rate, ffmpeg_path=ffmpeg_path)
 
-        # Run the blocking processor.run() in a threadpool
         results = await run_in_threadpool(processor.run)
         end_time = time.time()
         results["elapsed_time"] = end_time - start_time
@@ -83,8 +82,7 @@ async def process_video(video_file: UploadFile = File(...), reference_image: Upl
             if os.path.exists(path):
                 os.remove(path)
 
-
 # if __name__ == "__main__":
 #     uvicorn.run(app, host="0.0.0.0", port=8008)
 
-    # curl -X POST http://127.0.0.1:8008/process -F "video_file=@2.webm" -F "reference_image=@2.jpg"
+# curl -X POST http://127.0.0.1:8008/process -F "video_file=@2.webm" -F "reference_image=@2.jpg"
