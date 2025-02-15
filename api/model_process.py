@@ -151,7 +151,7 @@ class MediaProcessor:
             raise ValueError(f"No face found in reference image: {self.reference_image_path}")
         return encodings[0]["embedding"]
 
-    async def run(self):
+    def run(self):
         """
         Main pipeline:
           1) Parallel: extract audio & face detection
@@ -163,7 +163,8 @@ class MediaProcessor:
             face_future = loop.run_in_executor(pool, detect_face_similarity, self.video_path, self.face_model, self.distance_metric, self.threshold, self.reference_encoding)
             audio_future = loop.run_in_executor(pool, extract_audio, self.ffmpeg_path, self.video_path, self.output_audio_path, self.sample_rate)
 
-            await audio_future  # Wait for audio extraction to complete before transcription
+            # await audio_future  # Wait for audio extraction to complete before transcription
+            audio_future.result()
 
             transcribe_future = loop.run_in_executor(pool, transcribe_long_audio, self.processor, self.model, self.output_audio_path, 30, self.sample_rate)
 
