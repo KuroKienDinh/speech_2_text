@@ -15,7 +15,7 @@ from starlette.concurrency import run_in_threadpool
 from transformers import AutoProcessor, SeamlessM4Tv2Model
 
 from api.config import Config
-from api.model import MediaProcessor
+from api.model_process import MediaProcessor
 
 warnings.filterwarnings("ignore")
 
