@@ -15,7 +15,7 @@ from starlette.concurrency import run_in_threadpool
 from transformers import AutoProcessor, SeamlessM4Tv2Model
 
 from api.config import Config
-from api.model import MediaProcessor
+from api.model_process import MediaProcessor
 
 warnings.filterwarnings("ignore")
 
@@ -68,7 +68,8 @@ async def process_video(video_file: UploadFile = File(...), reference_image: Upl
         processor = MediaProcessor(media_processor=media_model["processor"], model=media_model["model"], video_path=temp_video_path, reference_image_path=temp_img_path, output_audio_path=temp_audio_path,
                                    threshold=threshold, sample_rate=sample_rate, ffmpeg_path=ffmpeg_path)
 
-        results = await run_in_threadpool(processor.run)
+        # results = await run_in_threadpool(processor.run)
+        results = await processor.run()
         end_time = time.time()
         results["elapsed_time"] = end_time - start_time
         return results
