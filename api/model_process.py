@@ -152,25 +152,45 @@ class MediaProcessor:
         return encodings[0]["embedding"]
 
     async def run(self):
-        """
-        Main pipeline:
-          1) Parallel: extract audio & face detection
-          2) Transcribe after audio is ready
-          3) Collect results
-        """
         loop = asyncio.get_running_loop()
-        with ProcessPoolExecutor() as pool:
-            face_future = loop.run_in_executor(pool, detect_face_similarity, self.video_path, self.face_model, self.distance_metric, self.threshold, self.reference_encoding)
-            audio_future = loop.run_in_executor(pool, extract_audio, self.ffmpeg_path, self.video_path, self.output_audio_path, self.sample_rate)
+        try:
+            with ProcessPoolExecutor() as pool:
+                face_future = loop.run_in_executor(
+                    pool, detect_face_similarity,
+                    self.video_path, self.face_model,
+                    self.distance_metric, self.threshold,
+                    self.reference_encoding
+                )
+                audio_future = loop.run_in_executor(
+                    pool, extract_audio,
+                    self.ffmpeg_path, self.video_path,
+                    self.output_audio_path, self.sample_rate
+                )
 
-            await asyncio.gather(face_future, audio_future)
+                # Wait for both to finish
+                await asyncio.gather(face_future, audio_future)
 
-            transcribe_future = loop.run_in_executor(pool, transcribe_long_audio, self.processor, self.model, self.output_audio_path, 30, self.sample_rate)
-            transcription = await transcribe_future
-        is_match, msg = face_future.result()
-        # is_match, msg = await face_future
+                # Now transcribe
+                transcribe_future = loop.run_in_executor(
+                    pool, transcribe_long_audio,
+                    self.processor, self.model,
+                    self.output_audio_path, 30, self.sample_rate
+                )
+                transcription = await transcribe_future
+        except Exception as e:
+            # Log or print the exception
+            # Return an error response so you never get "empty reply"
+            return {"detail": f"Error while processing: {str(e)}"}
+
+        # If we got here, no exceptions so far
+        try:
+            # Access the result of face detection
+            is_match, msg = face_future.result()  # Because we used gather(), face_future is done
+        except Exception as e:
+            return {"detail": f"Error obtaining face result: {str(e)}"}
+
         if msg == "Spoof detected":
             return {"detail": msg}
-        # transcription = transcribe_future.result()
+
         digits = find_three_spoken_digits(transcription)
         return {"3-digit": digits, "similarity": is_match}
