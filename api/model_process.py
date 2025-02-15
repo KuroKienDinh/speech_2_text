@@ -5,7 +5,7 @@
 # @Time:        1/18/2025 11:10 AM
 
 import subprocess
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 import asyncio
 import cv2
 import torch
@@ -154,7 +154,7 @@ class MediaProcessor:
     async def run(self):
         loop = asyncio.get_running_loop()
         try:
-            with ProcessPoolExecutor() as pool:
+            with ThreadPoolExecutor() as pool:
                 face_future = loop.run_in_executor(
                     pool,
                     detect_face_similarity,
@@ -173,7 +173,6 @@ class MediaProcessor:
                     self.sample_rate
                 )
 
-                # Await audio extraction completion before transcription
                 await audio_future
 
                 transcribe_future = loop.run_in_executor(
@@ -186,7 +185,6 @@ class MediaProcessor:
                     self.sample_rate
                 )
 
-                # Await results directly:
                 is_match, msg = await face_future
                 if msg == "Spoof detected":
                     return {"detail": msg}
@@ -194,6 +192,6 @@ class MediaProcessor:
                 digits = find_three_spoken_digits(transcription)
                 return {"3-digit": digits, "similarity": is_match}
         except Exception as e:
-            # Log the exception to understand what might be going wrong
             print(f"Exception in run pipeline: {e}")
             raise
+
