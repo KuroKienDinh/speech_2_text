@@ -171,6 +171,7 @@ class MediaProcessor:
         is_match, msg = await face_future
         if msg == "Spoof detected":
             return {"detail": msg}
-        transcription = transcribe_future.result()
+        # transcription = transcribe_future.result()
+        transcription = await transcribe_future
         digits = find_three_spoken_digits(transcription)
         return {"3-digit": digits, "similarity": is_match}
