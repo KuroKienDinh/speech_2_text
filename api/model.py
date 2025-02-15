@@ -26,6 +26,7 @@ def extract_audio(ffmpeg_path, video_path, output_audio_path, sample_rate):
         ffmpeg_path,
         "-y",  # Overwrite output file if it exists
         "-i", video_path,
+        "-t", "15",  # Extract only the first 15 seconds
         "-vn",  # disable video
         "-acodec", "pcm_s16le",  # 16-bit WAV
         "-ar", str(sample_rate),
@@ -35,57 +36,85 @@ def extract_audio(ffmpeg_path, video_path, output_audio_path, sample_rate):
     subprocess.run(command, check=True)
 
 
-def detect_face_similarity(video_path, face_model, distance_metric, threshold, reference_encoding):
+def detect_face_similarity(video_path, face_model, distance_metric, threshold, reference_encoding, batch_size=5):
     """
-    Detects faces in the video and checks if there's a match
-    with the reference face within a limited number of frames.
-    Returns True if matched frames exceed threshold, otherwise False.
+    Detects faces in the video by processing multiple frames in a batch.
+    Uses DeepFace.represent() to extract embeddings for each batch, then
+    runs DeepFace.verify() on all embeddings at once for efficiency.
+
+    Returns:
+        - True if matched frames exceed threshold.
+        - False if a spoofing attack is detected (>6 spoofed frames).
+        - None if no error occurs, otherwise returns an error message.
     """
     is_match = False
     video_capture = cv2.VideoCapture(video_path)
     frame_count = 0
     frame_count_matching = 0
     spoofing_count = 0
-
+    frames_buffer = []  # Store frames for batch processing
     try:
         while True:
             if frame_count_matching >= 10:
                 is_match = True
                 break
 
-            if frame_count >= 100:
+            if frame_count >= 100:  # Before we only use first 100 frames
                 break
 
             ret, frame = video_capture.read()
             if not ret:
                 break
 
-            try:
-                embedding_faces = DeepFace.represent(frame, model_name=face_model, enforce_detection=False, anti_spoofing=True)
-                for face in embedding_faces:
-                    if face["face_confidence"] < 0.7:
-                        continue
-                    result = DeepFace.verify(img1_path=reference_encoding, img2_path=face["embedding"], enforce_detection=False, distance_metric=distance_metric, model_name=face_model,
-                                             threshold=threshold, anti_spoofing=True)
-                    if result["verified"]:
-                        frame_count_matching += 1
-            except ValueError as e:
-                if "Spoof detected" in str(e):
-                    spoofing_count += 1
-                if spoofing_count > 6:
-                    video_capture.release()
-                    cv2.destroyAllWindows()
-                    return False, "Spoof detected"
-
-            # # Show the frame
-            # cv2.imshow("Video", frame)
-            # if cv2.waitKey(1) & 0xFF == ord("q"):
-            #     break
+            frames_buffer.append(frame)  # Collect frames for batching
             frame_count += 1
 
+            # Process when buffer reaches batch size
+            if len(frames_buffer) >= batch_size:
+                try:
+                    # Extract embeddings in batch
+                    batch_results = DeepFace.represent(frames_buffer, model_name=face_model, enforce_detection=False, anti_spoofing=True)
+
+                    # Process embeddings for each frame in batch
+                    for face_data in batch_results:
+                        if face_data["face_confidence"] < 0.7:
+                            continue
+
+                        try:
+                            # Compare embeddings using DeepFace.verify()
+                            result = DeepFace.verify(
+                                img1_path=reference_encoding,
+                                img2_path=face_data["embedding"],
+                                enforce_detection=False,
+                                distance_metric=distance_metric,
+                                model_name=face_model,
+                                threshold=threshold,
+                                anti_spoofing=True
+                            )
+
+                            if result["verified"]:
+                                frame_count_matching += 1
+
+                        except ValueError as e:
+                            if "Spoof detected" in str(e):
+                                spoofing_count += 1
+
+                    # Clear buffer after processing
+                    frames_buffer = []
+
+                    if spoofing_count > 6:
+                        video_capture.release()
+                        cv2.destroyAllWindows()
+                        return False, "Spoof detected"
+
+                except Exception as e:
+                    print(f"Error processing batch: {e}")
+
+        # Cleanup
         video_capture.release()
         cv2.destroyAllWindows()
         return is_match, None
+
     except Exception as e:
         try:
             video_capture.release()
