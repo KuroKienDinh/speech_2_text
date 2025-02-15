@@ -164,12 +164,12 @@ class MediaProcessor:
             audio_future = loop.run_in_executor(pool, extract_audio, self.ffmpeg_path, self.video_path, self.output_audio_path, self.sample_rate)
 
             await audio_future  # Wait for audio extraction to complete before transcription
-
             transcribe_future = loop.run_in_executor(pool, transcribe_long_audio, self.processor, self.model, self.output_audio_path, 30, self.sample_rate)
 
-        is_match, msg = face_future.result()
-        if msg == "Spoof detected":
-            return {"detail": msg}
-        transcription = transcribe_future.result()
-        digits = find_three_spoken_digits(transcription)
-        return {"3-digit": digits, "similarity": is_match}
+            # Await futures while still within the executor context:
+            is_match, msg = await asyncio.wrap_future(face_future)
+            if msg == "Spoof detected":
+                return {"detail": msg}
+            transcription = await asyncio.wrap_future(transcribe_future)
+            digits = find_three_spoken_digits(transcription)
+            return {"3-digit": digits, "similarity": is_match}
