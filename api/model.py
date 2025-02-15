@@ -188,8 +188,8 @@ class MediaProcessor:
           2) Transcribe after audio is ready
           3) Collect results
         """
-        face_future = executor.submit(detect_face_similarity, self.video_path, self.face_model, self.distance_metric, self.threshold, self.reference_encoding, )
-        audio_future = executor.submit(extract_audio, self.ffmpeg_path, self.video_path, self.output_audio_path, self.sample_rate, )
+        face_future = executor.submit(detect_face_similarity, self.video_path, self.face_model, self.distance_metric, self.threshold, self.reference_encoding, batch_size=5)
+        audio_future = executor.submit(extract_audio, self.ffmpeg_path, self.video_path, self.output_audio_path, self.sample_rate)
         audio_future.result()
         transcribe_future = executor.submit(transcribe_long_audio, self.processor, self.model, self.output_audio_path, 30, self.sample_rate)
 

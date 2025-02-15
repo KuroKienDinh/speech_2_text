@@ -6,7 +6,7 @@
 
 import subprocess
 from concurrent.futures import ProcessPoolExecutor
-
+import asyncio
 import cv2
 import torch
 import torchaudio
@@ -14,8 +14,6 @@ from deepface import DeepFace
 
 from api.config import Config
 from api.utils import find_three_spoken_digits
-
-executor = ProcessPoolExecutor(max_workers=2)
 
 
 def extract_audio(ffmpeg_path, video_path, output_audio_path, sample_rate):
@@ -27,6 +25,7 @@ def extract_audio(ffmpeg_path, video_path, output_audio_path, sample_rate):
         "-y",  # Overwrite output file if it exists
         "-i", video_path,
         "-vn",  # disable video
+        "-t", "15",  # Extract only the first 15 seconds
         "-acodec", "pcm_s16le",  # 16-bit WAV
         "-ar", str(sample_rate),
         "-ac", "1",  # mono
@@ -152,17 +151,21 @@ class MediaProcessor:
             raise ValueError(f"No face found in reference image: {self.reference_image_path}")
         return encodings[0]["embedding"]
 
-    def run(self):
+    async def run(self):
         """
         Main pipeline:
           1) Parallel: extract audio & face detection
           2) Transcribe after audio is ready
           3) Collect results
         """
-        face_future = executor.submit(detect_face_similarity, self.video_path, self.face_model, self.distance_metric, self.threshold, self.reference_encoding, )
-        audio_future = executor.submit(extract_audio, self.ffmpeg_path, self.video_path, self.output_audio_path, self.sample_rate, )
-        audio_future.result()
-        transcribe_future = executor.submit(transcribe_long_audio, self.processor, self.model, self.output_audio_path, 30, self.sample_rate)
+        loop = asyncio.get_running_loop()
+        with ProcessPoolExecutor() as pool:
+            face_future = loop.run_in_executor(pool, detect_face_similarity, self.video_path, self.face_model, self.distance_metric, self.threshold, self.reference_encoding)
+            audio_future = loop.run_in_executor(pool, extract_audio, self.ffmpeg_path, self.video_path, self.output_audio_path, self.sample_rate)
+
+            await audio_future  # Wait for audio extraction to complete before transcription
+
+            transcribe_future = loop.run_in_executor(pool, transcribe_long_audio, self.processor, self.model, self.output_audio_path, 30, self.sample_rate)
 
         is_match, msg = face_future.result()
         if msg == "Spoof detected":
