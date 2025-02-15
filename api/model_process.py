@@ -167,7 +167,8 @@ class MediaProcessor:
 
             transcribe_future = loop.run_in_executor(pool, transcribe_long_audio, self.processor, self.model, self.output_audio_path, 30, self.sample_rate)
 
-        is_match, msg = face_future.result()
+        # is_match, msg = face_future.result()
+        is_match, msg = await face_future
         if msg == "Spoof detected":
             return {"detail": msg}
         transcription = transcribe_future.result()
