@@ -151,47 +151,25 @@ class MediaProcessor:
             raise ValueError(f"No face found in reference image: {self.reference_image_path}")
         return encodings[0]["embedding"]
 
-    async def run(self):
-        loop = asyncio.get_running_loop()
+    def run(self):
+        """
+        Run the processing pipeline (runs in a separate process).
+        """
         try:
-            with ThreadPoolExecutor() as pool:
-                face_future = loop.run_in_executor(
-                    pool,
-                    detect_face_similarity,
-                    self.video_path,
-                    self.face_model,
-                    self.distance_metric,
-                    self.threshold,
-                    self.reference_encoding
-                )
-                audio_future = loop.run_in_executor(
-                    pool,
-                    extract_audio,
-                    self.ffmpeg_path,
-                    self.video_path,
-                    self.output_audio_path,
-                    self.sample_rate
-                )
+            is_match, msg = detect_face_similarity(
+                self.video_path, self.face_model, self.distance_metric, self.threshold, self.reference_encoding
+            )
+            if msg == "Spoof detected":
+                return {"detail": msg}
 
-                await audio_future
+            extract_audio(self.ffmpeg_path, self.video_path, self.output_audio_path, self.sample_rate)
 
-                transcribe_future = loop.run_in_executor(
-                    pool,
-                    transcribe_long_audio,
-                    self.processor,
-                    self.model,
-                    self.output_audio_path,
-                    30,
-                    self.sample_rate
-                )
+            transcription = transcribe_long_audio(
+                self.processor, self.model, self.output_audio_path, 30, self.sample_rate
+            )
 
-                is_match, msg = await face_future
-                if msg == "Spoof detected":
-                    return {"detail": msg}
-                transcription = await transcribe_future
-                digits = find_three_spoken_digits(transcription)
-                return {"3-digit": digits, "similarity": is_match}
+            digits = find_three_spoken_digits(transcription)
+            return {"3-digit": digits, "similarity": is_match}
         except Exception as e:
-            print(f"Exception in run pipeline: {e}")
-            raise
+            return {"error": str(e)}
 
