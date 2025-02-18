@@ -132,3 +132,6 @@ async def process_requests(q: asyncio.Queue, pool: ProcessPoolExecutor):
             for path in [video_path, img_path, audio_path]:
                 if os.path.exists(path):
                     os.remove(path)
+
+# curl -X POST http://127.0.0.1:8008/process -F "video_file=@2.webm" -F "reference_image=@2.jpg"
+
