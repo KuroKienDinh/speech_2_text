@@ -4,7 +4,7 @@ import time
 import aiofiles
 from fastapi import FastAPI, File, UploadFile, HTTPException, BackgroundTasks
 from celery.result import AsyncResult
-from celery_worker import process_media_task
+from api.celery_worker import process_media_task
 
 app = FastAPI(title="Media Processing API with Queue", version="1.0.0")
 
