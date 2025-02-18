@@ -1,27 +1,37 @@
-# docker compose -f docker-compose-gpu.yml -p media_process up -d --build
-# docker compose -f docker-compose-gpu.yml -p media_process down -v
-# print(torch.cuda.is_available())
-# print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
-
-version: '3.12.8'
+version: "3.8"  # Use a compatible version
 
 services:
   fastapi_app:
-    platform: linux/amd64  # This is the platform of the host machine
+    platform: linux/amd64
     build:
       context: .
       dockerfile: ./api/Dockerfile-gpu
     container_name: fastapi_app
     ports:
       - "8008:8008"
-#    restart: on-failure
-    # If you want to pass environment variables, add them here
     environment:
       - ENV=production
+      - REDIS_URL=redis://redis:6379/0  # Redis connection
     deploy:
       resources:
         reservations:
           devices:
             - driver: nvidia
               count: all
-              capabilities: [ gpu ]
+              capabilities: [gpu]
+    depends_on:
+      - redis
+      - worker  # Ensure Celery starts before FastAPI
+
+  redis:
+    image: "redis:latest"
+    container_name: redis_queue
+    restart: always
+    ports:
+      - "6379:6379"
+  
+  worker:
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: ./api/Dockerfile-gpu  # Use
