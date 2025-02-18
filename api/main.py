@@ -4,6 +4,7 @@ import uuid
 import warnings
 import asyncio
 from concurrent.futures import ProcessPoolExecutor
+from contextlib import asynccontextmanager
 
 import aiofiles
 from fastapi import FastAPI, File, UploadFile, HTTPException
