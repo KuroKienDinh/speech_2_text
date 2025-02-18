@@ -7,7 +7,7 @@ from concurrent.futures import ProcessPoolExecutor
 from contextlib import asynccontextmanager
 
 import aiofiles
-from fastapi import FastAPI, File, UploadFile, HTTPException, Depends
+from fastapi import FastAPI, File, UploadFile, HTTPException
 from starlette.requests import Request
 
 from transformers import AutoProcessor, SeamlessM4Tv2Model
@@ -80,6 +80,9 @@ async def process_video(
             while chunk := await reference_image.read(1024 * 1024):
                 await out_img.write(chunk)
 
+        # Create a future object to wait for the result
+        future = asyncio.Future()
+
         # Create task entry
         task = {
             "video_path": temp_video_path,
@@ -91,10 +94,14 @@ async def process_video(
             "processor": media_model["processor"],
             "model": media_model["model"],
             "semaphore": semaphore,  # Ensure proper concurrency handling
+            "future": future  # Store future to retrieve result later
         }
 
-        # Put task in queue and wait for result
-        result = await queue.put(task)
+        # Put task in queue
+        await queue.put(task)
+
+        # Wait for result
+        result = await future
 
         end_time = time.time()
         result["elapsed_time"] = end_time - start_time
@@ -136,11 +143,11 @@ async def process_requests(q: asyncio.Queue, pool: ProcessPoolExecutor):
                 loop = asyncio.get_running_loop()
                 result = await loop.run_in_executor(pool, processor.run)
 
-                q.task_done()  # Mark task as completed
-                return result  # Return result to waiting request
+                # Set the result for the waiting request
+                task["future"].set_result(result)
+
             except Exception as e:
-                return {"error": str(e)}
+                task["future"].set_exception(e)
 
-
-# curl -X POST http://127.0.0.1:8008/process -F "video_file=@2.webm" -F "reference_image=@2.jpg"
-
+            finally:
+                q.task_done()  # Mark task as completed
