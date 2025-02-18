@@ -31,6 +31,7 @@ async def lifespan(app: FastAPI):
     try:
         media_model["processor"] = AutoProcessor.from_pretrained(Config.audio_model)
         media_model["model"] = SeamlessM4Tv2Model.from_pretrained(Config.audio_model)
+        print("Models loaded successfully.")
     except Exception as e:
         print(f"Error loading model: {e}")
         # Optionally, you can re-raise the exception to prevent the app from starting without models
