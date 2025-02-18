@@ -27,30 +27,23 @@ semaphore = asyncio.Semaphore(MAX_CONCURRENT_TASKS)  # Concurrency limiter
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    pool = ProcessPoolExecutor()  # Global process pool for CPU-bound tasks
-    # Start the background task for processing queued requests
-    task_processor = asyncio.create_task(process_requests(queue, pool))
-    try:
-        yield {"pool": pool}
-    finally:
-        task_processor.cancel()  # Cancel background task on shutdown
-        pool.shutdown()
-
-# Create a single FastAPI instance with the lifespan manager
-app = FastAPI(title="Media Processing API", version="1.0.0", lifespan=lifespan)
-
-@app.on_event("startup")
-async def startup_event():
-    """
-    Load the processor and model once at startup.
-    If loading fails, re-raise the exception so the app does not start.
-    """
+    # Load the models here
     try:
         media_model["processor"] = AutoProcessor.from_pretrained(Config.audio_model)
         media_model["model"] = SeamlessM4Tv2Model.from_pretrained(Config.audio_model)
     except Exception as e:
         print(f"Error loading model: {e}")
-        raise e  # Fail fast if model loading fails
+        # Optionally, you can re-raise the exception to prevent the app from starting without models
+        raise e
+
+    pool = ProcessPoolExecutor()  # Global process pool for CPU tasks
+    asyncio.create_task(process_requests(queue, pool))  # Start background task
+    yield {"pool": pool}
+    pool.shutdown()  # Cleanup on shutdown
+
+# Initialize FastAPI with lifespan
+app = FastAPI(lifespan=lifespan)
+
 
 @app.post("/process")
 async def process_video(
