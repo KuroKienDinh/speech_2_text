@@ -47,8 +47,11 @@ async def startup_event():
     """
     Load the large model/processor once at startup.
     """
-    media_model["processor"] = AutoProcessor.from_pretrained(Config.audio_model)
-    media_model["model"] = SeamlessM4Tv2Model.from_pretrained(Config.audio_model)
+    try:
+        media_model["processor"] = AutoProcessor.from_pretrained(Config.audio_model)
+        media_model["model"] = SeamlessM4Tv2Model.from_pretrained(Config.audio_model)
+    except Exception as e:
+        print(f"Error loading model: {e}")
 
 
 @app.post("/process")
@@ -80,6 +83,13 @@ async def process_video(
             while chunk := await reference_image.read(1024 * 1024):
                 await out_img.write(chunk)
 
+        # Ensure models are available
+        processor = media_model.get("processor")
+        model = media_model.get("model")
+
+        if processor is None or model is None:
+            raise HTTPException(status_code=500, detail="Processor or model not loaded.")
+
         # Create a future object to wait for the result
         future = asyncio.Future()
 
@@ -91,8 +101,8 @@ async def process_video(
             "threshold": threshold,
             "sample_rate": sample_rate,
             "ffmpeg_path": ffmpeg_path,
-            "processor": media_model["processor"],
-            "model": media_model["model"],
+            "processor": processor,  # Ensure models are properly assigned
+            "model": model,
             "semaphore": semaphore,  # Ensure proper concurrency handling
             "future": future  # Store future to retrieve result later
         }
