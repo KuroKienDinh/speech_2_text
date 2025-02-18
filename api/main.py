@@ -7,9 +7,8 @@ from concurrent.futures import ProcessPoolExecutor
 from contextlib import asynccontextmanager
 
 import aiofiles
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, Depends
 from starlette.requests import Request
-from starlette.responses import JSONResponse
 
 from transformers import AutoProcessor, SeamlessM4Tv2Model
 
@@ -24,21 +23,22 @@ app = FastAPI(title="Media Processing API", version="1.0.0")
 # Dictionary to store media models
 media_model = {}
 
-# Fake database to store task statuses
-fake_db = {}
+# Constants
+MAX_CONCURRENT_TASKS = 3  # Limit concurrent processing tasks
+queue = asyncio.Queue()  # Global queue for processing
+semaphore = asyncio.Semaphore(MAX_CONCURRENT_TASKS)  # Limit concurrency
 
 
 # Lifespan: Manages ProcessPoolExecutor
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    q = asyncio.Queue()
-    pool = ProcessPoolExecutor()  # Process pool for CPU-bound tasks
-    asyncio.create_task(process_requests(q, pool))  # Start background task
-    yield {"q": q, "pool": pool}
-    pool.shutdown()  # Clean up process pool
+    pool = ProcessPoolExecutor()  # Global process pool for CPU tasks
+    asyncio.create_task(process_requests(queue, pool))  # Start background task
+    yield {"pool": pool}
+    pool.shutdown()  # Cleanup on shutdown
 
 
-# Initialize FastAPI with the lifespan manager
+# Initialize FastAPI with lifespan
 app = FastAPI(lifespan=lifespan)
 
 
@@ -53,12 +53,12 @@ async def startup_event():
 
 @app.post("/process")
 async def process_video(
-        request: Request,
-        video_file: UploadFile = File(...),
-        reference_image: UploadFile = File(...),
-        ffmpeg_path: str = Config.ffmpeg_path,
-        threshold: float = Config.threshold,
-        sample_rate: int = Config.sample_rate,
+    request: Request,
+    video_file: UploadFile = File(...),
+    reference_image: UploadFile = File(...),
+    ffmpeg_path: str = Config.ffmpeg_path,
+    threshold: float = Config.threshold,
+    sample_rate: int = Config.sample_rate,
 ):
     start_time = time.time()
 
@@ -80,58 +80,67 @@ async def process_video(
             while chunk := await reference_image.read(1024 * 1024):
                 await out_img.write(chunk)
 
-        # Generate a unique task ID
-        task_id = str(uuid.uuid4())
-        fake_db[task_id] = "Pending..."
+        # Create task entry
+        task = {
+            "video_path": temp_video_path,
+            "img_path": temp_img_path,
+            "audio_path": temp_audio_path,
+            "threshold": threshold,
+            "sample_rate": sample_rate,
+            "ffmpeg_path": ffmpeg_path,
+            "processor": media_model["processor"],
+            "model": media_model["model"],
+            "semaphore": semaphore,  # Ensure proper concurrency handling
+        }
 
-        # Add the task to the queue
-        request.state.q.put_nowait((task_id, temp_video_path, temp_img_path, temp_audio_path, threshold, sample_rate, ffmpeg_path))
+        # Put task in queue and wait for result
+        result = await queue.put(task)
 
-        return {"task_id": task_id}
+        end_time = time.time()
+        result["elapsed_time"] = end_time - start_time
+        return result  # Return processed output immediately
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
-@app.get("/status")
-async def check_status(task_id: str):
-    if task_id in fake_db:
-        return {"status": fake_db[task_id]}
-    else:
-        return JSONResponse("Task ID Not Found", status_code=404)
+    finally:
+        # Clean up temp files
+        for path in [temp_video_path, temp_img_path, temp_audio_path]:
+            if os.path.exists(path):
+                os.remove(path)
 
 
 async def process_requests(q: asyncio.Queue, pool: ProcessPoolExecutor):
     """
     Background task to process requests from the queue.
+    - Ensures only MAX_CONCURRENT_TASKS requests are processed at once.
+    - Requests will wait in the queue if all slots are full.
     """
     while True:
-        task_id, video_path, img_path, audio_path, threshold, sample_rate, ffmpeg_path = await q.get()
-        try:
-            processor = MediaProcessor(
-                media_processor=media_model["processor"],
-                model=media_model["model"],
-                video_path=video_path,
-                reference_image_path=img_path,
-                output_audio_path=audio_path,
-                threshold=threshold,
-                sample_rate=sample_rate,
-                ffmpeg_path=ffmpeg_path
-            )
+        task = await q.get()
+        async with task["semaphore"]:  # Wait if the maximum limit is reached
+            try:
+                # Initialize processor
+                processor = MediaProcessor(
+                    media_processor=task["processor"],
+                    model=task["model"],
+                    video_path=task["video_path"],
+                    reference_image_path=task["img_path"],
+                    output_audio_path=task["audio_path"],
+                    threshold=task["threshold"],
+                    sample_rate=task["sample_rate"],
+                    ffmpeg_path=task["ffmpeg_path"]
+                )
 
-            # Run processing in the process pool
-            loop = asyncio.get_running_loop()
-            result = await loop.run_in_executor(pool, processor.run)
+                # Run processing in ProcessPoolExecutor
+                loop = asyncio.get_running_loop()
+                result = await loop.run_in_executor(pool, processor.run)
 
-            # Update task status
-            fake_db[task_id] = result
-        except Exception as e:
-            fake_db[task_id] = f"Error: {str(e)}"
-        finally:
-            # Cleanup temporary files
-            for path in [video_path, img_path, audio_path]:
-                if os.path.exists(path):
-                    os.remove(path)
+                q.task_done()  # Mark task as completed
+                return result  # Return result to waiting request
+            except Exception as e:
+                return {"error": str(e)}
+
 
 # curl -X POST http://127.0.0.1:8008/process -F "video_file=@2.webm" -F "reference_image=@2.jpg"
 

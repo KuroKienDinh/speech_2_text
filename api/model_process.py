@@ -156,18 +156,22 @@ class MediaProcessor:
         Run the processing pipeline (runs in a separate process).
         """
         try:
+            # Face similarity detection
             is_match, msg = detect_face_similarity(
                 self.video_path, self.face_model, self.distance_metric, self.threshold, self.reference_encoding
             )
             if msg == "Spoof detected":
                 return {"detail": msg}
 
+            # Extract audio
             extract_audio(self.ffmpeg_path, self.video_path, self.output_audio_path, self.sample_rate)
 
+            # Transcribe audio
             transcription = transcribe_long_audio(
                 self.processor, self.model, self.output_audio_path, 30, self.sample_rate
             )
 
+            # Extract digits
             digits = find_three_spoken_digits(transcription)
             return {"3-digit": digits, "similarity": is_match}
         except Exception as e:
