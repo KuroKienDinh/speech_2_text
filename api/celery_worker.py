@@ -13,8 +13,14 @@ from api.config import Config
 from api.model_process import MediaProcessor
 from transformers import AutoProcessor, SeamlessM4Tv2Model
 
-# Initialize Celery with Redis as the message broker
-celery_app = Celery("media_processing", broker="redis://localhost:6379/0", backend="redis://localhost:6379/0")
+# Use the Redis service name from docker-compose.yml instead of localhost
+REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
+
+celery_app = Celery("media_processing", broker=REDIS_URL, backend=REDIS_URL)
+
+@celery_app.task(bind=True)
+def test_task(self):
+    return "Celery GPU task is running!"
 
 # Load the large model once globally
 media_model = {
