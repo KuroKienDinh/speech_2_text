@@ -47,11 +47,19 @@ async def startup_event():
     """
     Load the large model/processor once at startup.
     """
+    global media_model
     try:
+        print("🔄 Loading processor and model...")
         media_model["processor"] = AutoProcessor.from_pretrained(Config.audio_model)
         media_model["model"] = SeamlessM4Tv2Model.from_pretrained(Config.audio_model)
+        print("✅ Model loaded successfully.")
     except Exception as e:
-        print(f"Error loading model: {e}")
+        print(f"❌ Error loading model: {e}")
+        media_model["processor"] = None
+        media_model["model"] = None
+
+    # Give some time for the model to load before first request
+    await asyncio.sleep(1)
 
 
 @app.post("/process")
@@ -65,6 +73,13 @@ async def process_video(
 ):
     start_time = time.time()
 
+    # Ensure models are available
+    processor = media_model.get("processor")
+    model = media_model.get("model")
+
+    if processor is None or model is None:
+        raise HTTPException(status_code=500, detail="Processor or model not loaded. Please restart the server.")
+
     # Generate unique filenames
     video_ext = os.path.splitext(video_file.filename)[1]
     temp_video_path = f"temp_video_{uuid.uuid4()}{video_ext}"
@@ -74,90 +89,4 @@ async def process_video(
 
     try:
         # Save video file
-        async with aiofiles.open(temp_video_path, "wb") as out_video:
-            while chunk := await video_file.read(1024 * 1024):
-                await out_video.write(chunk)
-
-        # Save reference image
-        async with aiofiles.open(temp_img_path, "wb") as out_img:
-            while chunk := await reference_image.read(1024 * 1024):
-                await out_img.write(chunk)
-
-        # Ensure models are available
-        processor = media_model.get("processor")
-        model = media_model.get("model")
-
-        if processor is None or model is None:
-            raise HTTPException(status_code=500, detail="Processor or model not loaded.")
-
-        # Create a future object to wait for the result
-        future = asyncio.Future()
-
-        # Create task entry
-        task = {
-            "video_path": temp_video_path,
-            "img_path": temp_img_path,
-            "audio_path": temp_audio_path,
-            "threshold": threshold,
-            "sample_rate": sample_rate,
-            "ffmpeg_path": ffmpeg_path,
-            "processor": processor,  # Ensure models are properly assigned
-            "model": model,
-            "semaphore": semaphore,  # Ensure proper concurrency handling
-            "future": future  # Store future to retrieve result later
-        }
-
-        # Put task in queue
-        await queue.put(task)
-
-        # Wait for result
-        result = await future
-
-        end_time = time.time()
-        result["elapsed_time"] = end_time - start_time
-        return result  # Return processed output immediately
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-    finally:
-        # Clean up temp files
-        for path in [temp_video_path, temp_img_path, temp_audio_path]:
-            if os.path.exists(path):
-                os.remove(path)
-
-
-async def process_requests(q: asyncio.Queue, pool: ProcessPoolExecutor):
-    """
-    Background task to process requests from the queue.
-    - Ensures only MAX_CONCURRENT_TASKS requests are processed at once.
-    - Requests will wait in the queue if all slots are full.
-    """
-    while True:
-        task = await q.get()
-        async with task["semaphore"]:  # Wait if the maximum limit is reached
-            try:
-                # Initialize processor
-                processor = MediaProcessor(
-                    media_processor=task["processor"],
-                    model=task["model"],
-                    video_path=task["video_path"],
-                    reference_image_path=task["img_path"],
-                    output_audio_path=task["audio_path"],
-                    threshold=task["threshold"],
-                    sample_rate=task["sample_rate"],
-                    ffmpeg_path=task["ffmpeg_path"]
-                )
-
-                # Run processing in ProcessPoolExecutor
-                loop = asyncio.get_running_loop()
-                result = await loop.run_in_executor(pool, processor.run)
-
-                # Set the result for the waiting request
-                task["future"].set_result(result)
-
-            except Exception as e:
-                task["future"].set_exception(e)
-
-            finally:
-                q.task_done()  # Mark task as completed
+        async with aiofiles.open(temp_video_path, "wb") as out_video
