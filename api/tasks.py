@@ -20,7 +20,6 @@ media_model = {}
 
 @celery_app.task(bind=True)
 def process_media_task(
-    self,
     video_path,
     temp_img_path,
     temp_audio_path,
