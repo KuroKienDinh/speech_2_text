@@ -16,4 +16,4 @@ celery_app.conf.update(worker_max_tasks_per_child=1)
 
 # Autodiscover tasks in the 'api' package
 celery_app.autodiscover_tasks(['api'])
-celery_app.conf.update(result_expires=3600)
+celery_app.conf.update(result_expires=1800)

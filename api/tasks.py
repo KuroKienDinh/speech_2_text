@@ -3,7 +3,7 @@
 # @Filename:    tasks.py
 # @Author:      Kuro
 # @Time:        2/19/2025 10:15 AM
-
+import asyncio
 # api/tasks.py
 
 import os
@@ -20,13 +20,13 @@ media_model = {}
 
 @celery_app.task(bind=True)
 def process_media_task(
-        self,
-        video_path,
-        temp_img_path,
-        temp_audio_path,
-        threshold,
-        sample_rate,
-        ffmpeg_path
+    self,
+    video_path,
+    temp_img_path,
+    temp_audio_path,
+    threshold,
+    sample_rate,
+    ffmpeg_path
 ):
     # Ensure models are loaded
     if not media_model:
@@ -44,7 +44,13 @@ def process_media_task(
         ffmpeg_path=ffmpeg_path
     )
     try:
-        results = processor.run()
+        # Check if run() is a coroutine function
+        if asyncio.iscoroutinefunction(processor.run):
+            # Run the coroutine in an event loop
+            results = asyncio.run(processor.run())
+        else:
+            # If run() is synchronous
+            results = processor.run()
         return results
     except Exception as e:
         return {'detail': str(e)}
