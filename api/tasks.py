@@ -4,8 +4,6 @@
 # @Author:      Kuro
 # @Time:        2/19/2025 10:15 AM
 import asyncio
-# api/tasks.py
-
 import os
 
 from transformers import AutoProcessor, SeamlessM4Tv2Model
@@ -20,30 +18,35 @@ media_model = {}
 
 @celery_app.task(bind=True)
 def process_media_task(
-    self,
-    video_path,
-    temp_img_path,
-    temp_audio_path,
-    threshold,
-    sample_rate,
-    ffmpeg_path
+        self,
+        video_path,
+        temp_img_path,
+        temp_audio_path,
+        threshold,
+        sample_rate,
+        ffmpeg_path
 ):
     # Ensure models are loaded
     if not media_model:
         media_model["processor"] = AutoProcessor.from_pretrained(Config.audio_model)
         media_model["model"] = SeamlessM4Tv2Model.from_pretrained(Config.audio_model)
-
-    processor = MediaProcessor(
-        media_processor=media_model["processor"],
-        model=media_model["model"],
-        video_path=video_path,
-        reference_image_path=temp_img_path,
-        output_audio_path=temp_audio_path,
-        threshold=threshold,
-        sample_rate=sample_rate,
-        ffmpeg_path=ffmpeg_path
-    )
     try:
+        # Verify that the files exist
+        if not os.path.exists(video_path):
+            raise FileNotFoundError(f"Video file not found: {video_path}")
+        if not os.path.exists(temp_img_path):
+            raise FileNotFoundError(f"Reference image file not found: {temp_img_path}")
+
+        processor = MediaProcessor(
+            media_processor=media_model["processor"],
+            model=media_model["model"],
+            video_path=video_path,
+            reference_image_path=temp_img_path,
+            output_audio_path=temp_audio_path,
+            threshold=threshold,
+            sample_rate=sample_rate,
+            ffmpeg_path=ffmpeg_path
+        )
         # Check if run() is a coroutine function
         if asyncio.iscoroutinefunction(processor.run):
             # Run the coroutine in an event loop

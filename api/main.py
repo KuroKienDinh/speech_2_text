@@ -13,37 +13,37 @@ from api.tasks import process_media_task  # Import the Celery task
 warnings.filterwarnings("ignore")
 
 app = FastAPI(title="Media Processing API", version="1.0.0")
-
+# Use the shared directory
+TEMP_DIR = "/app/shared_temp"  # Ensure this matches the mount path in docker-compose.yml
+os.makedirs(TEMP_DIR, exist_ok=True)
 
 @app.post("/process")
 async def process_video(
-        video_file: UploadFile = File(...),
-        reference_image: UploadFile = File(...),
-        ffmpeg_path: str = Config.ffmpeg_path,
-        threshold: float = Config.threshold,
-        sample_rate: int = Config.sample_rate
+    video_file: UploadFile = File(...),
+    reference_image: UploadFile = File(...),
+    ffmpeg_path: str = Config.ffmpeg_path,
+    threshold: float = Config.threshold,
+    sample_rate: int = Config.sample_rate
 ):
-    # Save video temporarily
+    # Generate unique filenames in the shared directory
     video_ext = os.path.splitext(video_file.filename)[1]
-    temp_video_path = f"temp_video_{uuid.uuid4()}{video_ext}"
+    temp_video_path = os.path.join(TEMP_DIR, f"temp_video_{uuid.uuid4()}{video_ext}")
 
-    # Save reference image temporarily
     img_ext = os.path.splitext(reference_image.filename)[1]
-    temp_img_path = f"temp_ref_{uuid.uuid4()}{img_ext}"
+    temp_img_path = os.path.join(TEMP_DIR, f"temp_ref_{uuid.uuid4()}{img_ext}")
 
-    # Generate unique filename for output audio
-    temp_audio_path = f"temp_output_audio_{uuid.uuid4()}.wav"
+    temp_audio_path = os.path.join(TEMP_DIR, f"temp_output_audio_{uuid.uuid4()}.wav")
 
     try:
-        # --- Save video file asynchronously ---
+        # Save video file asynchronously
         async with aiofiles.open(temp_video_path, "wb") as out_video:
             while True:
-                chunk = await video_file.read(1024 * 1024)  # 1MB per chunk
+                chunk = await video_file.read(1024 * 1024)  # Read in chunks of 1MB
                 if not chunk:
                     break
                 await out_video.write(chunk)
 
-        # --- Save reference image asynchronously ---
+        # Save reference image asynchronously
         async with aiofiles.open(temp_img_path, "wb") as out_img:
             while True:
                 chunk = await reference_image.read(1024 * 1024)
@@ -64,8 +64,6 @@ async def process_video(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-    # Do not delete the temp files here; Celery task needs them
 
 
 @app.get('/tasks/{task_id}')
