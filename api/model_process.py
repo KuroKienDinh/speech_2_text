@@ -138,8 +138,7 @@ class MediaProcessor:
         self.face_model = face_model
         self.distance_metric = distance_metric
 
-        # Load face recognition model data early (e.g., reference encodings)
-        self.reference_encoding = self._load_reference_face_encoding()
+
 
     def _load_reference_face_encoding(self):
         """
@@ -153,6 +152,7 @@ class MediaProcessor:
 
     async def run(self):
         loop = asyncio.get_running_loop()
+        reference_encoding = await loop.run_in_executor(None, self._load_reference_face_encoding)
         try:
             with ThreadPoolExecutor() as pool:
                 face_future = loop.run_in_executor(
@@ -162,7 +162,7 @@ class MediaProcessor:
                     self.face_model,
                     self.distance_metric,
                     self.threshold,
-                    self.reference_encoding
+                    reference_encoding
                 )
                 audio_future = loop.run_in_executor(
                     pool,
