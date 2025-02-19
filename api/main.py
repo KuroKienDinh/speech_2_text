@@ -86,4 +86,4 @@ def get_task_status(task_id: str):
 #     uvicorn.run(app, host="0.0.0.0", port=8008)
 
 # curl -X POST http://127.0.0.1:8008/process -F "video_file=@2.webm" -F "reference_image=@2.jpg"
-# curl -X GET http://127.0.0.1:8008/tasks/655b37df-1992-477c-8895-959144cebb9a
+# curl -X GET http://127.0.0.1:8008/tasks/f0aaab5e-2775-4e0c-9d2b-7e39a5eec345
