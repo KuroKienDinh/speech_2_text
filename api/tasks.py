@@ -16,16 +16,8 @@ from .model_process import MediaProcessor
 media_model = {}
 
 
-@celery_app.task(bind=True)
-def process_media_task(
-        self,
-        video_path,
-        temp_img_path,
-        temp_audio_path,
-        threshold,
-        sample_rate,
-        ffmpeg_path
-):
+@celery_app.task()
+def process_media_task(video_path, temp_img_path, temp_audio_path, threshold, sample_rate, ffmpeg_path):
     # Ensure models are loaded
     if not media_model:
         media_model["processor"] = AutoProcessor.from_pretrained(Config.audio_model)

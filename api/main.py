@@ -17,14 +17,10 @@ app = FastAPI(title="Media Processing API", version="1.0.0")
 TEMP_DIR = "/app/shared_temp"  # Ensure this matches the mount path in docker-compose.yml
 os.makedirs(TEMP_DIR, exist_ok=True)
 
+
 @app.post("/process")
-async def process_video(
-    video_file: UploadFile = File(...),
-    reference_image: UploadFile = File(...),
-    ffmpeg_path: str = Config.ffmpeg_path,
-    threshold: float = Config.threshold,
-    sample_rate: int = Config.sample_rate
-):
+async def process_video(video_file: UploadFile = File(...), reference_image: UploadFile = File(...), ffmpeg_path: str = Config.ffmpeg_path, threshold: float = Config.threshold,
+                        sample_rate: int = Config.sample_rate):
     # Generate unique filenames in the shared directory
     video_ext = os.path.splitext(video_file.filename)[1]
     temp_video_path = os.path.join(TEMP_DIR, f"temp_video_{uuid.uuid4()}{video_ext}")
