@@ -6,6 +6,7 @@
 import asyncio
 import os
 
+import requests
 from transformers import AutoProcessor, SeamlessM4Tv2Model
 
 from api.config import Config
@@ -46,8 +47,18 @@ def process_media_task(video_path, temp_img_path, temp_audio_path, threshold, sa
         else:
             # If run() is synchronous
             results = processor.run()
+
+            # Send POST request to the webhook URL with the result
+            webhook_url = "http://dev.cmdsetup.com/webhook_python"
+            response = requests.post(webhook_url, json=results)
+            response.raise_for_status()
+            print(f"Webhook sent successfully: {response.status_code}")
         return results
     except Exception as e:
+        webhook_url = "http://dev.cmdsetup.com/webhook_python"
+        response = requests.post(webhook_url, json={'detail': str(e)})
+        response.raise_for_status()
+        print(f"Webhook sent successfully: {response.status_code}")
         return {'detail': str(e)}
     finally:
         # Clean up temp files
